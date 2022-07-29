@@ -14,7 +14,11 @@ php artisan serve
 
 # Functionalities
 Connect/Deconnect facebook account.
+
 User get notified each time a post is shared using his account.
+
 Users get notified weekly about the number of posts shared.
+
 Share immediate posts on Facebook pages.
+
 Share scheduled posts on Facebook pages.
