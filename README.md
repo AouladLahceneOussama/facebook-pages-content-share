@@ -11,6 +11,10 @@ php artisan migrate
 npm run dev
 php artisan serve
 ```
+> Don't forget to copy the env file and enter a valid database name before migration
+
+# usage
+Create a new account, then connect your facebook account
 
 # Functionalities
 - Connect/Deconnect facebook account.
