@@ -10,6 +10,10 @@ npm install
 php artisan migrate
 ```
 > Don't forget to copy the env file and enter a valid database name before migration
+> After creating .env file please run this command to generate an application key 
+```
+php artisan key:generate
+```
 
 # usage
 ```
