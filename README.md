@@ -14,6 +14,13 @@ php artisan migrate
 ```
 php artisan key:generate
 ```
+> The last thing to do is to insert the Facebook keys into the .env file.
+> and the smtp mail trap to catch emails
+```
+FACEBOOK_CLIENT_ID=
+FACEBOOK_CLIENT_SECRET=
+FACEBOOK_REDIRECT=http://localhost:8000/connect/facebook/callback
+```
 
 # usage
 ```
