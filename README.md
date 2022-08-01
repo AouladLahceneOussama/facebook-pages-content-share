@@ -8,8 +8,6 @@ cd facebook-pages-content-share
 composer install
 npm install
 php artisan migrate
-npm run dev
-php artisan serve
 ```
 > Don't forget to copy the env file and enter a valid database name before migration
 
