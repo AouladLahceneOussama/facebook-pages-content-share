@@ -5,6 +5,7 @@ This application is made using Laravel 9 and livewire components. It is about us
 ```
 git clone ...
 cd facebook-pages-content-share
+git checkout master
 composer install
 npm install
 php artisan migrate
