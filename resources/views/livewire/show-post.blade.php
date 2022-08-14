@@ -12,8 +12,13 @@
                 <button wire:click="chargePostsList('published')" class="px-2" type="button">Published</button>
             </div>
         </div>
-
     </div>
+
+    @if (session()->has('errorDeletePost'))
+    <div class="w-full bg-red-200 font-bold text-sm text-red-500 py-2 px-4 mb-2 rounded-md">
+        {{ session('errorDeletePost') }}
+    </div>
+    @endif
 
     <div class="inline-block min-w-full shadow rounded-lg overflow-hidden">
         <table class="min-w-full leading-normal">
@@ -73,6 +78,10 @@
                         @endif
                         <i wire:click="openUpdatePost({{ $post->id }})" class="fa-solid fa-pen text-green-500 p-1 cursor-pointer"></i>
                         <i wire:click="deletePost({{ $post->id }})" class="fa-solid fa-trash text-red-500 p-1 cursor-pointer"></i>
+
+                        @if($post->scheduled == 0)
+                        <i wire:click="showComments({{ $post->id }})" class="fa-solid fa-comments text-blue-500 p-1 cursor-pointer"></i>
+                        @endif
                     </td>
                 </tr>
                 @empty
@@ -87,8 +96,9 @@
             </tbody>
         </table>
 
-        <div class="w-full h-full overflow-scroll overflow-x-hidden absolute top-0 left-0 bg-gray-500/50 py-2 @if(!$open) hidden @endif" id="newItemForm">
-            <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
+        <!-- Update Form -->
+        <div class="w-full h-full flex align-center justify-center fixed top-0 left-0 bg-gray-500/50 py-2 @if(!$open) hidden @endif">
+            <div class="max-w-xl  m-auto sm:px-6 lg:px-8">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                     <div class="flex items-center justify-center py-4 px-10">
 
@@ -123,8 +133,69 @@
                 </div>
             </div>
         </div>
+        <!-- Update Form -->
 
-        <div wire:loading wire.target="deletePost, publishNowSchedule, chargePostsList, updatePost">
+        <!-- Comments manage -->
+        <div class="w-full h-full flex align-center justify-center overflow-scroll overflow-x-hidden overflow-y-hidden fixed top-0 left-0 bg-gray-500/50 py-2 @if(!$openComments) hidden @endif">
+            <div class="w-full m-auto sm:px-6 lg:px-8">
+                <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg py-4 px-10">
+                    <div>
+                        <h1 class="text-lg font-bold">Comments</h1>
+                    </div>
+                    <div>
+                        <div class="h-96 overflow-y-auto">
+                            @forelse($comments as $comment)
+                            <div class="flex justify-between align-center my-4 py-2 border-b border-gray-100" wire:key="'{{ $comment['id'] }}'">
+                                <div>
+                                    <p>from : {{ $comment['from']['name'] }}</p>
+                                    <p>message : {{ $comment['message'] }}</p>
+                                    <button wire:click="replyOnComment('{{ $comment['id'] }}')" class="hover:shadow-form rounded-md @if($selectedReply == $comment['id']) bg-indigo-700 @endif bg-indigo-500 px-8 text-base font-semibold text-white outline-none">
+                                        Reply
+                                    </button>
+                                </div>
+                            </div>
+                            @empty
+                            <div>
+                                No comments on that post
+                            </div>
+                            @endforelse
+                        </div>
+
+                        @if(count($comments) != 0)
+                        <div>
+                            <label for="reply" class="mb-1 block text-base font-medium text-[#07074D]">Your reply</label>
+                            <textarea wire:model="reply" name="" id="reply" cols="80" rows="2" placeholder="{{ __('Type your reply')}}" class="w-full resize-none rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-indigo-500 focus:shadow-md"></textarea>
+                            @error('commentToReply') <span class="text-red-500 text-xs">Pick the comment to reply first</span> @enderror
+                            @error('reply') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                        </div>
+                        @endif
+                    </div>
+
+                    <div class="mt-4 flex justify-between align-center space-x-2">
+                        <div>
+                            <button wire:click="sendComment" class="hover:shadow-form rounded-md bg-indigo-500 py-2 px-8 text-base font-semibold text-white outline-none">
+                                {{ __('Send') }}
+                            </button>
+                            <button wire:click="toggleComments" type="button" class="hover:shadow-form rounded-md bg-red-500 py-2 px-8 text-base font-semibold text-white outline-none">
+                                {{ __('Cancel') }}
+                            </button>
+                        </div>
+                        <div>
+                            @if (session()->has('message'))
+                            <div class="bg-green-300 text-green-500 py-1 px-4 rounded-md">
+                                {{ session('message') }}
+                            </div>
+                            @endif
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <!-- Comments manage -->
+
+        <div wire:loading wire:target="deletePost, publishNowSchedule, chargePostsList, updatePost, sendComment">
             <div class="fixed z-30 top-0 left-0 w-full h-full bg-gray-500/50 flex items-center justify-center">
                 <svg aria-hidden="true" class="mr-2 w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-indigo-500" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor" />

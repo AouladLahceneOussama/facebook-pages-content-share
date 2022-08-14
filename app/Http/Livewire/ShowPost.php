@@ -14,14 +14,25 @@ use Livewire\Component;
 class ShowPost extends Component
 {
     protected $listeners = ['postCreated' => 'refreshListPosts'];
+    protected $rules = [
+        'commentToReply' => 'required',
+        'reply' => 'required'
+    ];
 
     public $posts;
     public $open = false;
+    public $openComments = false;
 
     public $description;
     public $media;
     public $postId;
     public $type;
+
+    public $pageId;
+    public $comments = [];
+    public $commentToReply;
+    public $reply;
+    public $selectedReply = '';
 
     public function chargePostsList($type)
     {
@@ -49,7 +60,7 @@ class ShowPost extends Component
 
         $res = Http::post("https://graph.facebook.com/v14.0/$post->post_page_id?message=$this->description&access_token=$pageDetail->access_token")->json();
 
-        if ($res['success']) {
+        if (array_key_exists('success', $res) && $res['success']) {
             $post->update([
                 'description' => $this->description,
             ]);
@@ -80,7 +91,7 @@ class ShowPost extends Component
         $user = User::find(Auth::id());
         $user->notify(new ShareNotify($sharedPost));
     }
-    
+
     public function publishNowSchedule($id)
     {
         $postDetail = Post::find($id);
@@ -88,7 +99,7 @@ class ShowPost extends Component
 
         $res = Http::post("https://graph.facebook.com/$postDetail->post_page_id?is_published=true&access_token=$pageDetail->access_token")->json();
 
-        if ($res['success']) {
+        if (array_key_exists('success', $res) && $res['success']) {
             $postDetail->update([
                 'scheduled' => false,
                 'share_date_time' => Carbon::now()->format('Y-m-d H:i')
@@ -106,10 +117,52 @@ class ShowPost extends Component
 
         $res = Http::delete("https://graph.facebook.com/$postDetail->post_page_id?access_token=$access_token")->json();
 
-        if ($res['success']) {
+        if (array_key_exists('success', $res) && $res['success']) {
             $postDetail->delete();
             $this->emit('postCreated');
+        } else {
+            session()->flash('errorDeletePost', 'Error when deleting the post. Probably the post is deleted manually');
         }
+    }
+
+    public function showComments($id)
+    {
+        $this->openComments = true;
+        $this->pageId = $id;
+
+        $postDetail = Post::find($id);
+        $access_token = Page::find($postDetail->page_id)->access_token;
+
+        $res = Http::get("https://graph.facebook.com/$postDetail->post_page_id/comments?access_token=$access_token")->json();
+        if (count($res['data']) > 0) $this->comments = $res['data'];
+    }
+
+    public function replyOnComment($commentId)
+    {
+        $this->commentToReply = $commentId;
+        $this->selectedReply = $commentId;
+    }
+
+    public function sendComment()
+    {
+        $this->validate();
+
+        $postDetail = Post::find($this->pageId);
+        $access_token = Page::find($postDetail->page_id)->access_token;
+
+        $res = Http::post("https://graph.facebook.com/$this->commentToReply/comments?message=$this->reply&access_token=$access_token")->json();
+
+        if (array_key_exists('id', $res) && $res['id']){
+            session()->flash('message', 'Your reply is published');
+            $this->commentToReply = '';
+            $this->reply = '';
+        } 
+    }
+
+    public function toggleComments()
+    {
+        $this->openComments = $this->openComments == false ? true : false;
+        $this->comments = [];
     }
 
     public function refreshListPosts()

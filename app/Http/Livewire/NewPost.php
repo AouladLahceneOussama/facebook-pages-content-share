@@ -40,7 +40,7 @@ class NewPost extends Component
     {
         if (!$this->schedule) $this->validate();
         $this->schedule = $this->schedule == false ? true : false;
-        
+
         if ($this->schedule)
             $this->scheduleMinTime = Carbon::now()->add(10, 'minutes');
     }
@@ -58,34 +58,42 @@ class NewPost extends Component
         if ($this->media != '') {
 
             $res = Http::post("https://graph.facebook.com/v14.0/$pageDetail->page_id/photos?published=false&url=$this->media&caption=$this->description&access_token=$pageDetail->access_token")->json();
-            $postToCreate = [
-                'user_id' => Auth::id(),
-                'page_id' =>  $pageDetail->id,
-                'post_page_id' => $pageDetail->page_id . "_" . $res['id'],
-                'description' => $this->description,
-                'media' => $this->media,
-                'scheduled' => true,
-                'share_date_time' => $this->scheduleTime
-            ];
+            if (!array_key_exists('error', $res)) {
+                $postToCreate = [
+                    'user_id' => Auth::id(),
+                    'page_id' =>  $pageDetail->id,
+                    'post_page_id' => $pageDetail->page_id . "_" . $res['id'],
+                    'description' => $this->description,
+                    'media' => $this->media,
+                    'scheduled' => true,
+                    'share_date_time' => $this->scheduleTime
+                ];
+            }
         } else {
 
             $res = Http::post("https://graph.facebook.com/v14.0/$pageDetail->page_id/feed?published=false&message=$this->description&access_token=$pageDetail->access_token")->json();
-            $postToCreate = [
-                'user_id' => Auth::id(),
-                'page_id' =>  $pageDetail->id,
-                'post_page_id' => $res['id'],
-                'description' => $this->description,
-                'media' => $this->media,
-                'scheduled' => true,
-                'share_date_time' => $this->scheduleTime
-            ];
+            if (!array_key_exists('error', $res)) {
+                $postToCreate = [
+                    'user_id' => Auth::id(),
+                    'page_id' =>  $pageDetail->id,
+                    'post_page_id' => $res['id'],
+                    'description' => $this->description,
+                    'media' => $this->media,
+                    'scheduled' => true,
+                    'share_date_time' => $this->scheduleTime
+                ];
+            }
         }
 
-        Post::create($postToCreate);
-        $this->emit('postCreated');
-        $this->open = false;
-        $this->schedule = false;
-        $this->resetFields();
+        if (!array_key_exists('error', $res)) {
+            Post::create($postToCreate);
+            $this->emit('postCreated');
+            $this->open = false;
+            $this->schedule = false;
+            $this->resetFields();
+        } else {
+            session()->flash('errorPublishSchedule', 'Error when creating schedule post ' . $res['error']['message']);
+        }
     }
 
     public function sendNotification($post_page_id)
