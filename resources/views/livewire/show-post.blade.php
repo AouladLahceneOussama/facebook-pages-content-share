@@ -144,14 +144,22 @@
                     </div>
                     <div>
                         <div class="h-96 overflow-y-auto">
+
                             @forelse($comments as $comment)
-                            <div class="flex justify-between align-center my-4 py-2 border-b border-gray-100" wire:key="'{{ $comment['id'] }}'">
+                            <div class="flex justify-between my-4 py-2 border-b border-gray-100" wire:key="'{{ $comment['id'] }}'">
                                 <div>
                                     <p>from : {{ $comment['from']['name'] }}</p>
                                     <p>message : {{ $comment['message'] }}</p>
-                                    <button wire:click="replyOnComment('{{ $comment['id'] }}')" class="hover:shadow-form rounded-md @if($selectedReply == $comment['id']) bg-indigo-700 @endif bg-indigo-500 px-8 text-base font-semibold text-white outline-none">
-                                        Reply
-                                    </button>
+                                    <div class="flex space-x-2 mt-1">
+                                        <i class="fa-solid fa-heart rounded-md bg-purple-500 px-2 text-white text-xs leading-10"> {{ $comment['reactions']}}</i>
+                                        <button wire:click="replyOnComment('{{ $comment['id'] }}')" class="rounded-md @if($selectedReply == $comment['id']) bg-green-500 @endif bg-indigo-500 px-6 text-base font-semibold text-white outline-none">
+                                            Reply
+                                        </button>
+                                        <button wire:click="deleteComment('{{ $comment['id'] }}')" class="rounded-md bg-red-400 px-6 text-base font-semibold text-white outline-none">
+                                            Delete
+                                        </button>
+                                    </div>
+
                                 </div>
                             </div>
                             @empty
@@ -161,14 +169,11 @@
                             @endforelse
                         </div>
 
-                        @if(count($comments) != 0)
                         <div>
                             <label for="reply" class="mb-1 block text-base font-medium text-[#07074D]">Your reply</label>
                             <textarea wire:model="reply" name="" id="reply" cols="80" rows="2" placeholder="{{ __('Type your reply')}}" class="w-full resize-none rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-indigo-500 focus:shadow-md"></textarea>
-                            @error('commentToReply') <span class="text-red-500 text-xs">Pick the comment to reply first</span> @enderror
                             @error('reply') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
-                        @endif
                     </div>
 
                     <div class="mt-4 flex justify-between align-center space-x-2">
@@ -195,7 +200,7 @@
         </div>
         <!-- Comments manage -->
 
-        <div wire:loading wire:target="deletePost, publishNowSchedule, chargePostsList, updatePost, sendComment">
+        <div wire:loading wire:target="deletePost, publishNowSchedule, chargePostsList, updatePost, showComments, sendComment, deleteComment">
             <div class="fixed z-30 top-0 left-0 w-full h-full bg-gray-500/50 flex items-center justify-center">
                 <svg aria-hidden="true" class="mr-2 w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-indigo-500" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor" />

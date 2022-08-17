@@ -15,7 +15,6 @@ class ShowPost extends Component
 {
     protected $listeners = ['postCreated' => 'refreshListPosts'];
     protected $rules = [
-        'commentToReply' => 'required',
         'reply' => 'required'
     ];
 
@@ -30,7 +29,7 @@ class ShowPost extends Component
 
     public $pageId;
     public $comments = [];
-    public $commentToReply;
+    public $commentToReply = '';
     public $reply;
     public $selectedReply = '';
 
@@ -129,12 +128,22 @@ class ShowPost extends Component
     {
         $this->openComments = true;
         $this->pageId = $id;
+        $tmpComments = [];
 
         $postDetail = Post::find($id);
         $access_token = Page::find($postDetail->page_id)->access_token;
 
         $res = Http::get("https://graph.facebook.com/$postDetail->post_page_id/comments?access_token=$access_token")->json();
-        if (count($res['data']) > 0) $this->comments = $res['data'];
+        if (count($res['data']) > 0) $tmpComments = $res['data'];
+
+        for ($i = 0; $i < count($tmpComments); $i++) {
+            $cmtId = $tmpComments[$i]['id'];
+
+            $reactions = Http::get("https://graph.facebook.com/$cmtId/reactions?access_token=$access_token")->json();
+            if (count($reactions['data']) >= 0) $tmpComments[$i]["reactions"] = count($reactions['data']);
+        }
+
+        $this->comments = $tmpComments;
     }
 
     public function replyOnComment($commentId)
@@ -150,19 +159,42 @@ class ShowPost extends Component
         $postDetail = Post::find($this->pageId);
         $access_token = Page::find($postDetail->page_id)->access_token;
 
-        $res = Http::post("https://graph.facebook.com/$this->commentToReply/comments?message=$this->reply&access_token=$access_token")->json();
+        if ($this->commentToReply != '')
+            $res = Http::post("https://graph.facebook.com/$this->commentToReply/comments?message=$this->reply&access_token=$access_token")->json();
+        else
+            $res = Http::post("https://graph.facebook.com/$postDetail->post_page_id/comments?message=$this->reply&access_token=$access_token")->json();
 
-        if (array_key_exists('id', $res) && $res['id']){
+        if (array_key_exists('id', $res) && $res['id']) {
+            $response = Http::get("https://graph.facebook.com/$postDetail->post_page_id/comments?access_token=$access_token")->json();
+            if (count($response['data']) > 0) $this->comments = $response['data'];
+
             session()->flash('message', 'Your reply is published');
             $this->commentToReply = '';
             $this->reply = '';
-        } 
+            $this->selectedReply = '';
+        }
+    }
+
+    public function deleteComment($commentId)
+    {
+        $postDetail = Post::find($this->pageId);
+        $access_token = Page::find($postDetail->page_id)->access_token;
+
+        $res = Http::delete("https://graph.facebook.com/$commentId?access_token=$access_token")->json();
+
+        if (array_key_exists('success', $res) && $res['success']) {
+            $res = Http::get("https://graph.facebook.com/$postDetail->post_page_id/comments?access_token=$access_token")->json();
+            if (count($res['data']) > 0) $this->comments = $res['data'];
+        }
     }
 
     public function toggleComments()
     {
         $this->openComments = $this->openComments == false ? true : false;
         $this->comments = [];
+        $this->commentToReply = '';
+        $this->reply = '';
+        $this->selectedReply = '';
     }
 
     public function refreshListPosts()
