@@ -38,3 +38,4 @@ php artisan schedule:work
 - Share immediate posts on Facebook pages.
 - Share scheduled posts on Facebook pages.
 - Share text content or media content like images, video ( will be added soon )
+- Manage the comments(Share new comments/ Reply on other comments / Delete)
