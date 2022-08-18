@@ -10,12 +10,12 @@ composer install
 npm install
 php artisan migrate
 ```
-> Don't forget to copy the env file and enter a valid database name before migration.
+> Don't forget to copy the env file and enter a valid database name before migration.  
 > After creating .env file please run this command to generate an application key 
 ```
 php artisan key:generate
 ```
-> The last thing to do is to insert the Facebook keys into the .env file.
+> The last thing to do is to insert the Facebook keys into the .env file.  
 > and the smtp mail trap to catch emails
 ```
 FACEBOOK_CLIENT_ID=
